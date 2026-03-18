@@ -7,9 +7,32 @@ import { getAppUrl } from '../utils/appUrl';
 
 const router = express.Router();
 
-const client = new MercadoPagoConfig({ 
-  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || '' 
-});
+const getMercadoPagoAccessToken = () =>
+  process.env.MERCADO_PAGO_ACCESS_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN || '';
+
+const getMercadoPagoClient = () => {
+  const accessToken = getMercadoPagoAccessToken();
+  if (!accessToken) {
+    throw new Error('Credencial do Mercado Pago não configurada');
+  }
+
+  return new MercadoPagoConfig({ accessToken });
+};
+
+const getMercadoPagoErrorMessage = (error: unknown) => {
+  if (typeof error === 'object' && error !== null) {
+    const apiMessage =
+      (error as any).message ||
+      (error as any).cause?.[0]?.description ||
+      (error as any).error;
+
+    if (typeof apiMessage === 'string' && apiMessage.trim()) {
+      return apiMessage;
+    }
+  }
+
+  return 'Erro ao processar pagamento';
+};
 
 const planPrices: Record<string, number> = {
   basic: 49.90,
@@ -43,7 +66,7 @@ router.post('/create-preference', authenticate, async (req: AuthRequest, res) =>
     }
 
     const appUrl = getAppUrl(req);
-    const preference = new Preference(client);
+    const preference = new Preference(getMercadoPagoClient());
     const result = await preference.create({
       body: {
         items: [
@@ -82,7 +105,7 @@ router.post('/create-preference', authenticate, async (req: AuthRequest, res) =>
     res.json({ id: result.id, init_point: result.init_point });
   } catch (error) {
     console.error('Erro ao criar preferência Mercado Pago:', error);
-    res.status(500).json({ message: 'Erro ao processar pagamento' });
+    res.status(500).json({ message: getMercadoPagoErrorMessage(error) });
   }
 });
 
@@ -156,7 +179,7 @@ router.post('/webhook', async (req, res) => {
     const { type, data } = req.body;
 
     if (type === 'payment' && data?.id) {
-      const mpPaymentClient = new MercadoPagoPayment(client);
+      const mpPaymentClient = new MercadoPagoPayment(getMercadoPagoClient());
       const payment = await mpPaymentClient.get({ id: String(data.id) });
       const companyId = payment.external_reference || payment.metadata?.company_id;
       const plan = payment.metadata?.plan;
