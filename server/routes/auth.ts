@@ -8,7 +8,7 @@ import { AccessRequest } from '../models/AccessRequest';
 import { validateEmail } from '../utils/validation';
 import { notifyAdmins } from '../services/notificationService';
 import { getAppUrl } from '../utils/appUrl';
-import { sendEmployeeAccessRequestEmail, sendPasswordResetEmail } from '../services/emailService';
+import { isEmailDeliveryConfigured, sendEmployeeAccessRequestEmail, sendPasswordResetEmail } from '../services/emailService';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-me';
@@ -241,17 +241,43 @@ router.post('/forgot-password', async (req, res) => {
 
     const appUrl = getAppUrl(req);
     const resetUrl = `${appUrl}/reset-password/${token}`;
-    
-    await sendPasswordResetEmail({
-      to: user.email,
-      userName: user.name,
-      resetUrl
-    }).catch(error => {
-      console.error('Error sending password reset email:', error);
-    });
 
-    console.log(`[PASSWORD RESET] Link for ${email}: ${resetUrl}`);
-    
+    if (!isEmailDeliveryConfigured()) {
+      console.warn(`[PASSWORD RESET DISABLED] Link for ${email}: ${resetUrl}`);
+
+      if (process.env.NODE_ENV !== 'production') {
+        return res.json({
+          message: 'Email não configurado. Use o link de recuperação retornado para continuar em desenvolvimento.',
+          resetUrl
+        });
+      }
+
+      return res.status(503).json({
+        message: 'A recuperação por email não está configurada no momento. Tente novamente mais tarde.'
+      });
+    }
+
+    try {
+      await sendPasswordResetEmail({
+        to: user.email,
+        userName: user.name,
+        resetUrl
+      });
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+
+      if (process.env.NODE_ENV !== 'production') {
+        return res.json({
+          message: 'Falha no envio do email. Use o link de recuperação retornado para continuar em desenvolvimento.',
+          resetUrl
+        });
+      }
+
+      return res.status(502).json({
+        message: 'Não foi possível enviar o email de recuperação agora. Verifique a configuração de email e tente novamente.'
+      });
+    }
+
     res.json({ message: 'Se o email estiver cadastrado, você receberá um link de recuperação.' });
   } catch (error) {
     console.error(error);

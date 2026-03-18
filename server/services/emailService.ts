@@ -4,7 +4,13 @@ const resendApiKey = process.env.RESEND_API_KEY;
 const emailFrom = process.env.EMAIL_FROM || 'Olha o Ponto <no-reply@olhaoponto.com>';
 const supportEmail = process.env.SUPPORT_EMAIL || 'suporte@olhaoponto.com';
 
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+const hasPlaceholderValue = (value?: string) =>
+  !value || value.includes('SUA_CHAVE_REAL_DO_RESEND') || value.includes('COLE_AQUI');
+
+export const isEmailDeliveryConfigured = () =>
+  !hasPlaceholderValue(resendApiKey) && !hasPlaceholderValue(emailFrom);
+
+const resend = isEmailDeliveryConfigured() ? new Resend(resendApiKey as string) : null;
 
 const sendEmail = async ({
   to,
