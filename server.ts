@@ -11,6 +11,8 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
+const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(cors());
 app.use(express.json());
@@ -20,23 +22,19 @@ async function connectDB() {
   let MONGODB_URI = process.env.MONGODB_URI;
 
   if (!MONGODB_URI) {
+    if (isProduction) {
+      throw new Error('MONGODB_URI is required in production. Configure it in the Render environment variables.');
+    }
+
     console.log('No MONGODB_URI provided, starting in-memory MongoDB...');
     const mongoServer = await MongoMemoryServer.create();
     MONGODB_URI = mongoServer.getUri();
   }
 
-  mongoose.connect(MONGODB_URI)
-    .then(() => {
-      const isAtlas = MONGODB_URI?.includes('mongodb.net');
-      console.log(`Connected to MongoDB ${isAtlas ? '(Atlas)' : '(Local/Memory)'}`);
-    })
-    .catch(err => {
-      console.error('MongoDB connection error:', err);
-      process.exit(1); // Exit if connection fails in production
-    });
+  await mongoose.connect(MONGODB_URI);
+  const isAtlas = MONGODB_URI.includes('mongodb.net');
+  console.log(`Connected to MongoDB ${isAtlas ? '(Atlas)' : '(Local/Memory)'}`);
 }
-
-connectDB();
 
 // API Routes
 app.get('/api/health', (req, res) => {
@@ -57,7 +55,9 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
+  await connectDB();
+
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -71,9 +71,22 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  app.listen(Number(PORT), HOST, () => {
+    console.log(`Server running on http://${HOST}:${PORT}`);
   });
 }
 
-startServer();
+process.on('unhandledRejection', error => {
+  console.error('Unhandled promise rejection:', error);
+  process.exit(1);
+});
+
+process.on('uncaughtException', error => {
+  console.error('Uncaught exception:', error);
+  process.exit(1);
+});
+
+startServer().catch(error => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
+});
