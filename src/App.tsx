@@ -58,6 +58,12 @@ function App() {
 
   return (
     <BrowserRouter>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-lg focus:bg-sky-500 focus:px-4 focus:py-2 focus:font-semibold focus:text-black"
+      >
+        Pular para o conteúdo principal
+      </a>
       <Toaster position="top-center" toastOptions={{
         style: {
           background: '#18181b',

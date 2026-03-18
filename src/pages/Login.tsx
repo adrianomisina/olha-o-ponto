@@ -53,37 +53,41 @@ const Login = () => {
           {role === 'admin' ? 'Acesso Administrativo' : 'Acesso do Funcionário'}
         </h2>
         
-        <div className="flex w-full bg-zinc-900 rounded-xl p-1 mb-8">
+        <div className="flex w-full bg-zinc-900 rounded-xl p-1 mb-8" role="tablist" aria-label="Selecione o tipo de acesso">
           <button
             type="button"
             onClick={() => setRole('employee')}
+            role="tab"
+            aria-selected={role === 'employee'}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all ${
               role === 'employee' 
                 ? 'bg-zinc-800 text-white shadow-sm' 
                 : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
-            <User className="w-4 h-4" />
+            <User aria-hidden="true" className="w-4 h-4" />
             Funcionário
           </button>
           <button
             type="button"
             onClick={() => setRole('admin')}
+            role="tab"
+            aria-selected={role === 'admin'}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all ${
               role === 'admin' 
                 ? 'bg-zinc-800 text-white shadow-sm' 
                 : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
-            <Building2 className="w-4 h-4" />
+            <Building2 aria-hidden="true" className="w-4 h-4" />
             Administrador
           </button>
         </div>
 
         <form className="space-y-6 w-full" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-rose-500/10 border border-rose-500/50 p-3 rounded-md flex items-center gap-3 text-rose-500">
-              <AlertCircle className="w-5 h-5" />
+            <div role="alert" aria-live="assertive" className="bg-rose-500/10 border border-rose-500/50 p-3 rounded-md flex items-center gap-3 text-rose-500">
+              <AlertCircle aria-hidden="true" className="w-5 h-5" />
               <p className="text-sm">{error}</p>
             </div>
           )}

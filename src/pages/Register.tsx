@@ -13,6 +13,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [plan, setPlan] = useState('basic');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   
   const { login } = useAuthStore();
   const navigate = useNavigate();
@@ -25,8 +26,11 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     if (password !== confirmPassword) {
-      toast.error('As senhas não coincidem');
+      const message = 'As senhas não coincidem';
+      setError(message);
+      toast.error(message);
       return;
     }
 
@@ -44,10 +48,14 @@ const Register = () => {
         toast.success('Cadastro realizado! Vamos configurar seu teste grátis.');
         navigate(`/admin/checkout?plan=${plan}`);
       } else {
-        toast.error(data.message || 'Erro ao realizar cadastro');
+        const message = data.message || 'Erro ao realizar cadastro';
+        setError(message);
+        toast.error(message);
       }
     } catch (error) {
-      toast.error('Erro de conexão ao realizar cadastro');
+      const message = 'Erro de conexão ao realizar cadastro';
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -100,15 +108,26 @@ const Register = () => {
             <p className="text-zinc-400">Preencha os dados abaixo para iniciar seu teste de 7 dias.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" aria-describedby="register-form-help">
+            {error && (
+              <div role="alert" aria-live="assertive" className="rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                {error}
+              </div>
+            )}
+
+            <p id="register-form-help" className="sr-only">
+              Preencha os dados da empresa, crie sua senha e escolha um plano para iniciar o teste grátis.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Nome da Empresa</label>
+                <label htmlFor="companyName" className="text-[10px] font-black text-zinc-300 uppercase tracking-widest ml-1">Nome da Empresa</label>
                 <div className="relative group">
-                  <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-indigo-500 transition-colors" />
+                  <Building2 aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
                   <input
+                    id="companyName"
                     type="text"
                     required
+                    autoComplete="organization"
                     className="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                     placeholder="Minha Empresa LTDA"
                     value={companyName}
@@ -118,12 +137,14 @@ const Register = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Seu Nome</label>
+                <label htmlFor="userName" className="text-[10px] font-black text-zinc-300 uppercase tracking-widest ml-1">Seu Nome</label>
                 <div className="relative group">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-indigo-500 transition-colors" />
+                  <User aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
                   <input
+                    id="userName"
                     type="text"
                     required
+                    autoComplete="name"
                     className="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                     placeholder="Nome completo"
                     value={userName}
@@ -134,12 +155,14 @@ const Register = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Email Corporativo</label>
+              <label htmlFor="registerEmail" className="text-[10px] font-black text-zinc-300 uppercase tracking-widest ml-1">Email Corporativo</label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-indigo-500 transition-colors" />
+                <Mail aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
                 <input
+                  id="registerEmail"
                   type="email"
                   required
+                  autoComplete="email"
                   className="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                   placeholder="seu@email.com"
                   value={email}
@@ -150,12 +173,14 @@ const Register = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Senha</label>
+                <label htmlFor="registerPassword" className="text-[10px] font-black text-zinc-300 uppercase tracking-widest ml-1">Senha</label>
                 <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-indigo-500 transition-colors" />
+                  <Lock aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
                   <input
+                    id="registerPassword"
                     type="password"
                     required
+                    autoComplete="new-password"
                     className="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                     placeholder="••••••••"
                     value={password}
@@ -165,12 +190,14 @@ const Register = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Confirmar Senha</label>
+                <label htmlFor="confirmPassword" className="text-[10px] font-black text-zinc-300 uppercase tracking-widest ml-1">Confirmar Senha</label>
                 <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-indigo-500 transition-colors" />
+                  <Lock aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
                   <input
+                    id="confirmPassword"
                     type="password"
                     required
+                    autoComplete="new-password"
                     className="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                     placeholder="••••••••"
                     value={confirmPassword}
@@ -181,14 +208,16 @@ const Register = () => {
             </div>
 
             {/* Plan Selection */}
-            <div className="space-y-4 pt-4">
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Escolha seu Plano</label>
+            <fieldset className="space-y-4 pt-4">
+              <legend className="text-[10px] font-black text-zinc-300 uppercase tracking-widest ml-1">Escolha seu Plano</legend>
               <div className="grid grid-cols-1 gap-3">
                 {plans.map((p) => (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => setPlan(p.id)}
+                    aria-pressed={plan === p.id}
+                    aria-label={`${p.name}, R$ ${p.price.toFixed(2)} por mês, ${p.features[0]}`}
                     className={`flex items-center justify-between p-5 rounded-2xl border transition-all duration-300 ${
                       plan === p.id 
                         ? 'bg-indigo-500/10 border-indigo-500 text-white ring-4 ring-indigo-500/5' 
@@ -220,7 +249,7 @@ const Register = () => {
                   <span className="text-indigo-400 font-bold"> Nenhuma cobrança será feita nos primeiros 7 dias.</span>
                 </p>
               </div>
-            </div>
+            </fieldset>
 
             <Button
               type="submit"
