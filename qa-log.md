@@ -1,0 +1,52 @@
+# QA Log
+
+## 2026-03-18
+- Iniciada análise estrutural do projeto React/Vite + Express/Mongoose.
+- README e scripts revisados para entendimento do setup local.
+- Dependências instaladas com `npm install`.
+- Plano de testes registrado em `test-plan.md`.
+- `npm run lint` executado com sucesso.
+- `npm run build` executado com sucesso.
+- Bug confirmado: `npm start` falhava por incompatibilidade ESM/CommonJS no servidor compilado.
+- Regressão HTTP inicial executada contra a API local.
+- Bugs confirmados na regressão:
+  - cadastro de admin não retornava `companyId`, quebrando convite de funcionário;
+  - recuperação de senha gerava URL com `undefined` quando `APP_URL` não estava configurada.
+- Bugs adicionais identificados por inspeção e compatibilidade frontend/backend:
+  - dashboard do funcionário tratava resposta paginada de ajustes como array simples;
+  - botão de filtro em relatórios chamava `fetchReports` com o evento do clique;
+  - checkout/pagamentos dependiam de `APP_URL` sem fallback local;
+  - script `npm start` iniciava em modo de desenvolvimento por ausência de `NODE_ENV=production`.
+- Correções implementadas no backend, frontend e scripts de build/start.
+- Teste automatizado adicionado em `tests/api-regression.test.mjs`.
+- Validações finais executadas com sucesso:
+  - `npm run lint`
+  - `npm run test:qa`
+  - `npm run build`
+  - `PORT=3201 npm start`
+  - smoke test HTTP em `http://localhost:3201/api/health`
+  - smoke test no modo `dev` cobrindo cadastro admin + convite de funcionário
+
+## 2026-03-18 - Rodada Regressiva Completa
+- Nova regressão completa executada após as últimas mudanças de produção, acesso e layout.
+- Validações executadas com sucesso:
+  - `npm run lint`
+  - `npm run build`
+  - `npm run test:qa`
+- Smoke test end-to-end manual via HTTP executado em `http://localhost:3300` cobrindo:
+  - cadastro e login de administrador
+  - recuperação de senha do administrador
+  - cadastro por convite de funcionário
+  - criação/listagem/desativação de funcionário
+  - dashboard, histórico e ajustes do funcionário
+  - solicitações de acesso do funcionário para o administrador
+  - aprovações, relatórios, configurações e pagamentos do administrador
+- Bug encontrado nesta rodada:
+  - simulação de pagamento da UI chamava o webhook diretamente e retornava `500`.
+- Correção aplicada:
+  - criação de rota autenticada de simulação em `/api/payments/sim`
+  - atualização do frontend de pagamentos para usar a rota correta
+  - teste automatizado cobrindo simulação e histórico de pagamento
+- Revisão de layout por inspeção de código realizada nas telas críticas de admin e checkout.
+- Limitação registrada:
+  - não houve execução de navegador real/headed para validação visual pixel a pixel; a verificação de UI foi feita por inspeção estrutural de componentes, responsividade por classes utilitárias e checagem funcional das rotas e estados.
