@@ -66,7 +66,7 @@ function App() {
         }
       }} />
       <Routes>
-        <Route path="/" element={<Navigate to={isAuthenticated ? (user?.role === 'admin' ? '/admin' : '/app') : '/login'} replace />} />
+        <Route path="/" element={<Navigate to={isAuthenticated ? (user?.role === 'admin' ? '/admin' : '/app') : '/register'} replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/register-employee" element={<EmployeeRegister />} />
@@ -101,7 +101,7 @@ function App() {
           <Route path="todos" element={<Todos />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to={isAuthenticated ? (user?.role === 'admin' ? '/admin' : '/app') : '/register'} replace />} />
       </Routes>
     </BrowserRouter>
   );
