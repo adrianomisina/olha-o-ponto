@@ -131,7 +131,7 @@ No ambiente atual, a aplicação roda como um monólito (Express servindo o Vite
 
 ## Variáveis no Render
 
-Use o arquivo [production.env.example](/home/adriano/Área%20de%20Trabalho/projects/olha-o-ponto/production.env.example) como referência.
+Use o arquivo [/.env.example](/home/adriano/Área%20de%20Trabalho/projects/olha-o-ponto/.env.example) como referência.
 
 ### Obrigatórias
 
