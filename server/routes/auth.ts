@@ -7,6 +7,7 @@ import { Company } from '../models/Company';
 import { validateEmail, validatePassword, passwordValidationMessage } from '../utils/validation';
 import { getAppUrl } from '../utils/appUrl';
 import { isEmailDeliveryConfigured, sendPasswordResetEmail } from '../services/emailService';
+import { getTrialEndsAt } from '../utils/subscription';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-me';
@@ -35,7 +36,8 @@ router.post('/register', async (req, res) => {
       email,
       plan: plan || 'basic',
       employeesLimit: plan === 'professional' ? 30 : plan === 'enterprise' ? 100 : 10,
-      subscriptionStatus: 'pending'
+      subscriptionStatus: 'pending',
+      trialEndsAt: getTrialEndsAt({ createdAt: new Date() })
     });
     await company.save();
 

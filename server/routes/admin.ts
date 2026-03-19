@@ -1,6 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import { authenticate, requireRole, AuthRequest } from '../middleware/auth';
+import { authenticate, requireActiveSubscription, requireRole, AuthRequest } from '../middleware/auth';
 import { User } from '../models/User';
 import { TimeRecord } from '../models/TimeRecord';
 import { Company } from '../models/Company';
@@ -13,6 +13,7 @@ const router = express.Router();
 
 router.use(authenticate);
 router.use(requireRole('admin'));
+router.use(requireActiveSubscription({ allowPaths: ['/dashboard', '/settings'] }));
 
 // Get admin dashboard stats
 router.get('/dashboard', async (req: AuthRequest, res) => {
@@ -42,7 +43,9 @@ router.get('/dashboard', async (req: AuthRequest, res) => {
       recentActivity: todayRecords.slice(-5).reverse(),
       pendingAdjustments,
       employeesLimit: company?.employeesLimit || 0,
-      subscriptionStatus: company?.subscriptionStatus || 'active',
+      subscriptionStatus: req.company?.subscriptionStatus || company?.subscriptionStatus || 'active',
+      trialEndsAt: req.company?.trialEndsAt || company?.trialEndsAt?.toISOString?.(),
+      accessBlocked: req.company?.accessBlocked || false,
       plan: company?.plan || 'free'
     });
   } catch (error) {

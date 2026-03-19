@@ -52,6 +52,54 @@ test.after(async () => {
   });
 });
 
+async function withServer(env, run) {
+  const port = 4100 + Math.floor(Math.random() * 400);
+  const localBaseUrl = `http://127.0.0.1:${port}`;
+  const processRef = spawn('./node_modules/.bin/tsx', ['server.ts'], {
+    env: { ...process.env, PORT: String(port), DISABLE_HMR: 'true', NODE_ENV: 'test', ...env },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  const localApi = async (path, options = {}) => {
+    const response = await fetch(`${localBaseUrl}${path}`, options);
+    const text = await response.text();
+    let body;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+    return { response, body };
+  };
+
+  const waitForLocalServer = async () => {
+    const deadline = Date.now() + 30000;
+    while (Date.now() < deadline) {
+      try {
+        const response = await fetch(`${localBaseUrl}/api/health`);
+        if (response.ok) return;
+      } catch {}
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    throw new Error('Local test server did not become ready in time');
+  };
+
+  try {
+    await waitForLocalServer();
+    await run(localApi);
+  } finally {
+    if (processRef.exitCode === null) {
+      processRef.kill('SIGTERM');
+    }
+    await new Promise(resolve => {
+      processRef.once('exit', resolve);
+      setTimeout(() => {
+        if (processRef.exitCode === null) processRef.kill('SIGKILL');
+      }, 2000);
+    });
+  }
+}
+
 test('admin settings cannot directly change plan or employee limit', async () => {
   const stamp = Date.now();
   const register = await api('/api/auth/register', {
@@ -168,4 +216,47 @@ test('payment simulation works in non-production for the authenticated admin', a
   assert.equal(history.body.payments.length, 1);
   assert.equal(history.body.payments[0].status, 'approved');
   assert.equal(history.body.payments[0].paymentMethod, 'simulation');
+});
+
+test('expired trial blocks admin operations but keeps settings and payments accessible', async () => {
+  await withServer({ MONGODB_URI: '', TRIAL_DAYS: '0', APP_URL: '' }, async (localApi) => {
+    const stamp = Date.now() + 3;
+    const register = await localApi('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        companyName: 'Blocked Corp',
+        userName: 'Admin Blocked',
+        email: `admin.blocked.${stamp}@example.com`,
+        password: 'Senha123!',
+        plan: 'basic'
+      })
+    });
+
+    assert.equal(register.response.status, 201);
+    const token = register.body.token;
+
+    const settings = await localApi('/api/admin/settings', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    assert.equal(settings.response.status, 200);
+    assert.equal(settings.body.subscriptionStatus, 'blocked');
+
+    const dashboard = await localApi('/api/admin/dashboard', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    assert.equal(dashboard.response.status, 200);
+    assert.equal(dashboard.body.accessBlocked, true);
+
+    const employees = await localApi('/api/admin/employees', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    assert.equal(employees.response.status, 402);
+    assert.equal(employees.body.code, 'SUBSCRIPTION_BLOCKED');
+
+    const payments = await localApi('/api/payments/history', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    assert.equal(payments.response.status, 200);
+  });
 });

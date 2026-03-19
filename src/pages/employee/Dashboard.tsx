@@ -25,6 +25,7 @@ const EmployeeDashboard = () => {
   const [todayRecords, setTodayRecords] = useState<any[]>([]);
   const [pendingAdjustments, setPendingAdjustments] = useState<any[]>([]);
   const [showSuccessFeedback, setShowSuccessFeedback] = useState(false);
+  const [subscriptionBlockedMessage, setSubscriptionBlockedMessage] = useState('');
   const { token, user } = useAuthStore();
 
   useEffect(() => {
@@ -43,6 +44,12 @@ const EmployeeDashboard = () => {
       if (res.ok) {
         const data = await res.json();
         setTodayRecords(data.todayRecords);
+        if (data.accessBlocked) {
+          const blockedSince = data.trialEndsAt ? new Date(data.trialEndsAt).toLocaleString('pt-BR') : '';
+          setSubscriptionBlockedMessage(`O acesso da empresa está bloqueado por falta de pagamento desde ${blockedSince}.`);
+        } else {
+          setSubscriptionBlockedMessage('');
+        }
       }
     } catch (error) {
       console.error('Error fetching dashboard:', error);
@@ -58,6 +65,9 @@ const EmployeeDashboard = () => {
         const data = await res.json();
         // Filter only pending adjustments
         setPendingAdjustments((data.adjustments || []).filter((adj: any) => adj.status === 'pending').slice(0, 3));
+      } else if (res.status === 402) {
+        const data = await res.json();
+        setSubscriptionBlockedMessage(data.message || 'Acesso bloqueado por falta de pagamento.');
       }
     } catch (error) {
       console.error('Error fetching adjustments:', error);
@@ -262,6 +272,12 @@ const EmployeeDashboard = () => {
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col w-full"
     >
+      {subscriptionBlockedMessage && (
+        <div className="mx-4 mt-4 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-200">
+          {subscriptionBlockedMessage}
+        </div>
+      )}
+
       {/* Header */}
       <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-zinc-800 p-4">
         <h1 className="text-xl font-bold">Página Inicial</h1>
@@ -296,7 +312,7 @@ const EmployeeDashboard = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => handlePunchClock('in')}
-            disabled={isLoading}
+            disabled={isLoading || !!subscriptionBlockedMessage}
             className="flex flex-col items-center justify-center p-4 rounded-2xl bg-linear-to-br from-zinc-900 to-zinc-900 hover:from-blue-900/40 hover:to-purple-900/40 transition-all duration-300 border border-zinc-800 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 group"
           >
             <LogIn className="w-6 h-6 mb-2 text-emerald-500 group-hover:scale-110 transition-transform duration-300" />
@@ -306,7 +322,7 @@ const EmployeeDashboard = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => handlePunchClock('break_start')}
-            disabled={isLoading}
+            disabled={isLoading || !!subscriptionBlockedMessage}
             className="flex flex-col items-center justify-center p-4 rounded-2xl bg-linear-to-br from-zinc-900 to-zinc-900 hover:from-blue-900/40 hover:to-purple-900/40 transition-all duration-300 border border-zinc-800 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 group"
           >
             <Coffee className="w-6 h-6 mb-2 text-amber-500 group-hover:scale-110 transition-transform duration-300" />
@@ -316,7 +332,7 @@ const EmployeeDashboard = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => handlePunchClock('break_end')}
-            disabled={isLoading}
+            disabled={isLoading || !!subscriptionBlockedMessage}
             className="flex flex-col items-center justify-center p-4 rounded-2xl bg-linear-to-br from-zinc-900 to-zinc-900 hover:from-blue-900/40 hover:to-purple-900/40 transition-all duration-300 border border-zinc-800 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 group"
           >
             <Coffee className="w-6 h-6 mb-2 text-sky-500 group-hover:scale-110 transition-transform duration-300" />
@@ -326,7 +342,7 @@ const EmployeeDashboard = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => handlePunchClock('out')}
-            disabled={isLoading}
+            disabled={isLoading || !!subscriptionBlockedMessage}
             className="flex flex-col items-center justify-center p-4 rounded-2xl bg-linear-to-br from-zinc-900 to-zinc-900 hover:from-blue-900/40 hover:to-purple-900/40 transition-all duration-300 border border-zinc-800 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 group"
           >
             <LogOut className="w-6 h-6 mb-2 text-rose-500 group-hover:scale-110 transition-transform duration-300" />

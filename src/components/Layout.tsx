@@ -3,12 +3,14 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Clock, Users, FileText, LogOut, Home, User, Settings, CreditCard, X, CheckSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 const Layout = () => {
-  const { user, logout } = useAuthStore();
+  const { user, token, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [subscriptionChecked, setSubscriptionChecked] = useState(false);
 
   useEffect(() => {
     if (!isLogoutModalOpen) {
@@ -24,6 +26,54 @@ const Layout = () => {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isLogoutModalOpen]);
+
+  useEffect(() => {
+    if (user?.role !== 'admin') {
+      setSubscriptionChecked(true);
+      return;
+    }
+
+    const allowedBlockedPaths = ['/admin/payments', '/admin/checkout', '/admin/settings'];
+    let isMounted = true;
+
+    const verifySubscription = async () => {
+      try {
+        const res = await fetch('/api/admin/settings', {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+        });
+
+        if (!res.ok) {
+          setSubscriptionChecked(true);
+          return;
+        }
+
+        const data = await res.json();
+        const isBlocked = data.subscriptionStatus === 'blocked';
+        const isAllowedPath = allowedBlockedPaths.some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+
+        if (isMounted && isBlocked && !isAllowedPath) {
+          toast.error('Assinatura bloqueada. Redirecionamos você para pagamentos.');
+          navigate('/admin/payments', { replace: true });
+          return;
+        }
+
+        if (isMounted) {
+          setSubscriptionChecked(true);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setSubscriptionChecked(true);
+        }
+      }
+    };
+
+    setSubscriptionChecked(false);
+    verifySubscription();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.role, token, location.pathname, navigate]);
 
   const handleLogoutClick = () => {
     setIsLogoutModalOpen(true);
@@ -52,6 +102,10 @@ const Layout = () => {
   ];
 
   const links = user?.role === 'admin' ? adminLinks : employeeLinks;
+
+  if (!subscriptionChecked) {
+    return <div className="min-h-screen bg-black text-zinc-500 flex items-center justify-center">Verificando assinatura...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 flex justify-center">

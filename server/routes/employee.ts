@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import { authenticate, requireActiveSubscription, AuthRequest } from '../middleware/auth';
 import { TimeRecord } from '../models/TimeRecord';
 import { TimeAdjustment } from '../models/TimeAdjustment';
 import { User } from '../models/User';
@@ -7,9 +7,22 @@ import { notifyAdmins } from '../services/notificationService';
 
 const router = express.Router();
 
+router.use(authenticate);
+router.use(requireActiveSubscription({ allowPaths: ['/dashboard'] }));
+
 // Get employee dashboard data
-router.get('/dashboard', authenticate, async (req: AuthRequest, res) => {
+router.get('/dashboard', async (req: AuthRequest, res) => {
   try {
+    if (req.company?.accessBlocked) {
+      return res.json({
+        todayRecords: [],
+        lastRecord: null,
+        subscriptionStatus: req.company.subscriptionStatus,
+        trialEndsAt: req.company.trialEndsAt,
+        accessBlocked: true,
+      });
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -22,7 +35,10 @@ router.get('/dashboard', authenticate, async (req: AuthRequest, res) => {
 
     res.json({
       todayRecords: records,
-      lastRecord
+      lastRecord,
+      subscriptionStatus: req.company?.subscriptionStatus || 'paid',
+      trialEndsAt: req.company?.trialEndsAt,
+      accessBlocked: false,
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -30,7 +46,7 @@ router.get('/dashboard', authenticate, async (req: AuthRequest, res) => {
 });
 
 // Punch clock (bater ponto)
-router.post('/time-record', authenticate, async (req: AuthRequest, res) => {
+router.post('/time-record', async (req: AuthRequest, res) => {
   try {
     const { type, location, notes } = req.body;
 
@@ -52,7 +68,7 @@ router.post('/time-record', authenticate, async (req: AuthRequest, res) => {
 });
 
 // Get history
-router.get('/time-records', authenticate, async (req: AuthRequest, res) => {
+router.get('/time-records', async (req: AuthRequest, res) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -76,7 +92,7 @@ router.get('/time-records', authenticate, async (req: AuthRequest, res) => {
 });
 
 // Create an adjustment request
-router.post('/adjustments', authenticate, async (req: AuthRequest, res) => {
+router.post('/adjustments', async (req: AuthRequest, res) => {
   try {
     const { proposedTimestamp, proposedType, reason, originalRecordId } = req.body;
 
@@ -108,7 +124,7 @@ router.post('/adjustments', authenticate, async (req: AuthRequest, res) => {
 });
 
 // Get employee's adjustment requests
-router.get('/adjustments', authenticate, async (req: AuthRequest, res) => {
+router.get('/adjustments', async (req: AuthRequest, res) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;

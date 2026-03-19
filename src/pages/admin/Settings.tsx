@@ -21,7 +21,8 @@ const AdminSettings = () => {
     address: '',
     employeesLimit: 10,
     plan: 'basic',
-    subscriptionStatus: 'pending'
+    subscriptionStatus: 'pending',
+    trialEndsAt: '',
   });
 
   const planPrices = {
@@ -48,7 +49,8 @@ const AdminSettings = () => {
           address: data.address || '',
           employeesLimit: data.employeesLimit || 3,
           plan: data.plan || 'free',
-          subscriptionStatus: data.subscriptionStatus || 'active'
+          subscriptionStatus: data.subscriptionStatus || 'active',
+          trialEndsAt: data.trialEndsAt || '',
         });
       }
     } catch (error) {
@@ -148,6 +150,22 @@ const AdminSettings = () => {
       </div>
 
       <div className="p-6">
+        {company.subscriptionStatus === 'blocked' && (
+          <div className="mb-6 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-4">
+            <p className="text-sm font-semibold text-rose-300">Acesso bloqueado por falta de pagamento.</p>
+            <p className="mt-1 text-sm text-zinc-300">
+              O teste gratuito terminou em {company.trialEndsAt ? new Date(company.trialEndsAt).toLocaleString('pt-BR') : '--'}.
+            </p>
+            <button
+              type="button"
+              onClick={handlePayment}
+              className="mt-3 text-sm font-bold text-sky-400 hover:underline"
+            >
+              Regularizar assinatura
+            </button>
+          </div>
+        )}
+
         <form onSubmit={handleSave} className="space-y-6">
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-white border-b border-zinc-800 pb-2">Dados Gerais</h2>

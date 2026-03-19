@@ -16,6 +16,7 @@ const companySchema = new mongoose.Schema({
   mercadoPagoCustomerId: String,
   mercadoPagoPreferenceId: String,
   subscriptionStatus: { type: String, default: 'pending' },
+  trialEndsAt: Date,
   employeesLimit: { type: Number, default: 10 },
 }, { timestamps: true });
 
