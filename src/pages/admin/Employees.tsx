@@ -4,6 +4,8 @@ import { UserPlus, Search, Edit2, Trash2, Mail, Briefcase, Building2, Fingerprin
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import Button from '../../components/Button';
+import PasswordField from '../../components/PasswordField';
+import { validatePassword, passwordValidationMessage } from '../../utils/passwordValidation';
 
 const AdminEmployees = () => {
   const [employees, setEmployees] = useState<any[]>([]);
@@ -71,6 +73,11 @@ const AdminEmployees = () => {
     
     if (companyInfo && totalEmployees >= companyInfo.employeesLimit) {
       toast.error(`Limite de funcionários atingido (${companyInfo.employeesLimit}). Por favor, faça um upgrade no seu plano.`);
+      return;
+    }
+
+    if (!validatePassword(formData.password)) {
+      toast.error(passwordValidationMessage);
       return;
     }
 
@@ -487,14 +494,17 @@ const AdminEmployees = () => {
                 onChange={e => setFormData({...formData, email: e.target.value})}
                 className="w-full bg-black border border-zinc-700 rounded-md px-4 py-3 text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none"
               />
-              <input
-                type="password"
+              <PasswordField
+                id="employeePassword"
+                label="Senha Provisória"
+                value={formData.password}
+                onChange={(value) => setFormData({ ...formData, password: value })}
+                placeholder="Senha Provisória"
                 required
                 maxLength={128}
-                placeholder="Senha Provisória"
-                value={formData.password}
-                onChange={e => setFormData({...formData, password: e.target.value})}
-                className="w-full bg-black border border-zinc-700 rounded-md px-4 py-3 text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none"
+                inputClassName="w-full bg-black border border-zinc-700 rounded-md px-4 py-3 pr-12 text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none peer"
+                labelClassName="sr-only"
+                hint={passwordValidationMessage}
               />
               <div className="grid grid-cols-2 gap-4">
                 <input

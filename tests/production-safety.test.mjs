@@ -32,7 +32,7 @@ async function api(path, options = {}) {
 
 test.before(async () => {
   serverProcess = spawn('./node_modules/.bin/tsx', ['server.ts'], {
-    env: { ...process.env, PORT: String(PORT), DISABLE_HMR: 'true' },
+    env: { ...process.env, PORT: String(PORT), DISABLE_HMR: 'true', NODE_ENV: 'test' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
@@ -91,7 +91,7 @@ test('admin settings cannot directly change plan or employee limit', async () =>
   assert.equal(update.body.employeesLimit, 10);
 });
 
-test('employee forgot access creates an admin-facing access request', async () => {
+test('employee forgot password returns a reset link in development', async () => {
   const stamp = Date.now() + 1;
   const register = await api('/api/auth/register', {
     method: 'POST',
@@ -106,7 +106,6 @@ test('employee forgot access creates an admin-facing access request', async () =
   });
 
   assert.equal(register.response.status, 201);
-  const adminToken = register.body.token;
   const companyId = register.body.user.companyId;
 
   const employee = await api('/api/auth/register-employee', {
@@ -126,21 +125,12 @@ test('employee forgot access creates an admin-facing access request', async () =
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      role: 'employee',
-      email: `func.access.${stamp}@example.com`,
-      message: 'Esqueci minha senha e preciso voltar a acessar.'
+      email: `func.access.${stamp}@example.com`
     })
   });
 
   assert.equal(forgot.response.status, 200);
-
-  const requests = await api('/api/admin/access-requests', {
-    headers: { 'Authorization': `Bearer ${adminToken}` }
-  });
-
-  assert.equal(requests.response.status, 200);
-  assert.equal(requests.body.totalOpen, 1);
-  assert.match(requests.body.requests[0].message, /Esqueci minha senha/);
+  assert.match(forgot.body.resetUrl, /\/reset-password\/[a-f0-9]{40}$/);
 });
 
 test('payment simulation works in non-production for the authenticated admin', async () => {

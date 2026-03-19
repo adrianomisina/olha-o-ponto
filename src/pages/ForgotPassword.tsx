@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Clock, AlertCircle, CheckCircle, User, Building2, MessageSquare } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import Button from '../components/Button';
 
 const ForgotPassword = () => {
-  const [searchParams] = useSearchParams();
-  const initialRole = searchParams.get('role') === 'admin' ? 'admin' : 'employee';
-  const [role, setRole] = useState<'employee' | 'admin'>(initialRole);
   const [email, setEmail] = useState('');
-  const [messageText, setMessageText] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +19,7 @@ const ForgotPassword = () => {
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role, message: messageText }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
@@ -46,33 +42,8 @@ const ForgotPassword = () => {
         <Clock className="w-12 h-12 text-white mb-6" />
         <h2 className="text-3xl font-bold mb-4 w-full text-center">Recuperar Senha</h2>
         <p className="text-zinc-500 text-center mb-8">
-          {role === 'admin'
-            ? 'Insira seu email para receber um link de recuperação.'
-            : 'Informe seu email e uma mensagem. O administrador da empresa será avisado.'}
+          Insira seu email cadastrado para receber um link de redefinição de senha.
         </p>
-
-        <div className="flex w-full bg-zinc-900 rounded-xl p-1 mb-8">
-          <button
-            type="button"
-            onClick={() => setRole('employee')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all ${
-              role === 'employee' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            <User className="w-4 h-4" />
-            Funcionário
-          </button>
-          <button
-            type="button"
-            onClick={() => setRole('admin')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all ${
-              role === 'admin' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            <Building2 className="w-4 h-4" />
-            Administrador
-          </button>
-        </div>
 
         <form className="space-y-6 w-full" onSubmit={handleSubmit}>
           {error && (
@@ -105,23 +76,6 @@ const ForgotPassword = () => {
             </label>
           </div>
 
-          {role === 'employee' && (
-            <div className="relative">
-              <textarea
-                required
-                maxLength={1000}
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                className="block w-full min-h-32 bg-black border border-zinc-700 rounded-md px-4 py-4 text-white focus:ring-1 focus:ring-sky-500 focus:border-sky-500 placeholder-zinc-500"
-                placeholder="Explique rapidamente o problema para o administrador."
-              />
-              <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
-                <MessageSquare className="w-4 h-4" />
-                Sua mensagem ficará disponível para o administrador.
-              </div>
-            </div>
-          )}
-
           <Button
             type="submit"
             isLoading={isLoading}
@@ -129,7 +83,7 @@ const ForgotPassword = () => {
             size="full"
             className="mt-6"
           >
-            {role === 'admin' ? 'Enviar Link' : 'Enviar Solicitação'}
+            Enviar Link
           </Button>
         </form>
 
