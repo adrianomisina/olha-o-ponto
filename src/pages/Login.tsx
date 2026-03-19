@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Clock, AlertCircle, User, Building2 } from 'lucide-react';
 import Button from '../components/Button';
+import PasswordField from '../components/PasswordField';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -110,23 +111,21 @@ const Login = () => {
             </div>
 
             <div className="relative">
-              <input
-                type="password"
+              <PasswordField
+                id="password"
+                label="Senha"
+                value={password}
+                onChange={setPassword}
+                placeholder="Senha"
                 required
                 maxLength={128}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full bg-black border border-zinc-700 rounded-md px-4 py-4 text-white focus:ring-1 focus:ring-sky-500 focus:border-sky-500 peer placeholder-transparent"
-                placeholder="Senha"
-                id="password"
+                inputClassName="block w-full bg-black border border-zinc-700 rounded-md px-4 py-4 pr-12 text-white focus:ring-1 focus:ring-sky-500 focus:border-sky-500 peer placeholder-transparent"
+                labelClassName="absolute left-4 top-2 text-xs text-zinc-500 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-sky-500"
               />
-              <label htmlFor="password" className="absolute left-4 top-2 text-xs text-zinc-500 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-sky-500">
-                Senha
-              </label>
             </div>
             
             <div className="flex justify-end">
-              <Link to={`/forgot-password?role=${role}`} className="text-zinc-500 hover:text-sky-500 text-sm transition-colors">
+              <Link to="/forgot-password" className="text-zinc-500 hover:text-sky-500 text-sm transition-colors">
                 Esqueci minha senha
               </Link>
             </div>

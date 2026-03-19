@@ -6,7 +6,7 @@ import { TimeRecord } from '../models/TimeRecord';
 import { Company } from '../models/Company';
 import { TimeAdjustment } from '../models/TimeAdjustment';
 import { AccessRequest } from '../models/AccessRequest';
-import { validateEmail } from '../utils/validation';
+import { validateEmail, validatePassword, passwordValidationMessage } from '../utils/validation';
 import { sendPushNotification } from '../services/notificationService';
 
 const router = express.Router();
@@ -86,6 +86,7 @@ router.post('/employees', async (req: AuthRequest, res) => {
     if (!validateEmail(email)) return res.status(400).json({ message: 'Por favor, insira um email válido' });
     if (email?.length > 100) return res.status(400).json({ message: 'Email muito longo (máx 100 caracteres)' });
     if (password?.length > 128) return res.status(400).json({ message: 'Senha muito longa (máx 128 caracteres)' });
+    if (!validatePassword(password)) return res.status(400).json({ message: passwordValidationMessage });
     if (position?.length > 100) return res.status(400).json({ message: 'Cargo muito longo (máx 100 caracteres)' });
     if (department?.length > 100) return res.status(400).json({ message: 'Departamento muito longo (máx 100 caracteres)' });
 

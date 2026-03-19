@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import Button from '../components/Button';
+import PasswordField from '../components/PasswordField';
+import { validatePassword, passwordValidationMessage } from '../utils/passwordValidation';
 
 const EmployeeRegister = () => {
   const [searchParams] = useSearchParams();
@@ -42,6 +44,12 @@ const EmployeeRegister = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!validatePassword(formData.password)) {
+      setError(passwordValidationMessage);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -131,21 +139,18 @@ const EmployeeRegister = () => {
             </label>
           </div>
 
-          <div className="relative">
-            <input
-              type="password"
-              required
-              maxLength={128}
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="block w-full bg-black border border-zinc-700 rounded-md px-4 py-4 text-white focus:ring-1 focus:ring-sky-500 focus:border-sky-500 peer placeholder-transparent"
-              placeholder="Senha"
-              id="password"
-            />
-            <label htmlFor="password" className="absolute left-4 top-2 text-xs text-zinc-500 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-sky-500">
-              Criar Senha
-            </label>
-          </div>
+          <PasswordField
+            id="password"
+            label="Criar Senha"
+            value={formData.password}
+            onChange={(value) => setFormData({ ...formData, password: value })}
+            placeholder="Senha"
+            required
+            maxLength={128}
+            inputClassName="block w-full bg-black border border-zinc-700 rounded-md px-4 py-4 pr-12 text-white focus:ring-1 focus:ring-sky-500 focus:border-sky-500 peer placeholder-transparent"
+            labelClassName="absolute left-4 top-2 text-xs text-zinc-500 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-sky-500"
+            hint={passwordValidationMessage}
+          />
 
           <Button
             type="submit"

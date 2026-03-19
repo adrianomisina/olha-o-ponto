@@ -4,11 +4,9 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { User } from '../models/User';
 import { Company } from '../models/Company';
-import { AccessRequest } from '../models/AccessRequest';
-import { validateEmail } from '../utils/validation';
-import { notifyAdmins } from '../services/notificationService';
+import { validateEmail, validatePassword, passwordValidationMessage } from '../utils/validation';
 import { getAppUrl } from '../utils/appUrl';
-import { isEmailDeliveryConfigured, sendEmployeeAccessRequestEmail, sendPasswordResetEmail } from '../services/emailService';
+import { isEmailDeliveryConfigured, sendPasswordResetEmail } from '../services/emailService';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-me';
@@ -23,6 +21,7 @@ router.post('/register', async (req, res) => {
     if (!validateEmail(email)) return res.status(400).json({ message: 'Por favor, insira um email válido' });
     if (email?.length > 100) return res.status(400).json({ message: 'Email muito longo (máx 100 caracteres)' });
     if (password?.length > 128) return res.status(400).json({ message: 'Senha muito longa (máx 128 caracteres)' });
+    if (!validatePassword(password)) return res.status(400).json({ message: passwordValidationMessage });
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -79,6 +78,7 @@ router.post('/register-employee', async (req, res) => {
     if (!companyId) return res.status(400).json({ message: 'ID da empresa é obrigatório' });
     if (!name || !email || !password) return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
     if (!validateEmail(email)) return res.status(400).json({ message: 'Email inválido' });
+    if (!validatePassword(password)) return res.status(400).json({ message: passwordValidationMessage });
 
     const company = await Company.findById(companyId);
     if (!company) return res.status(404).json({ message: 'Empresa não encontrada' });
@@ -168,68 +168,10 @@ router.post('/login', async (req, res) => {
 
 router.post('/forgot-password', async (req, res) => {
   try {
-    const { email, role = 'admin', message } = req.body;
+    const { email } = req.body;
     if (!validateEmail(email)) return res.status(400).json({ message: 'Por favor, insira um email válido' });
 
-    if (role === 'employee') {
-      const employee = await User.findOne({ email, role: 'employee', isActive: true });
-      if (!employee) {
-        return res.json({ message: 'Se encontrarmos este funcionário, avisaremos o administrador responsável.' });
-      }
-
-      const trimmedMessage = typeof message === 'string' && message.trim()
-        ? message.trim()
-        : 'Preciso recuperar meu acesso ao sistema.';
-
-      const existingRequest = await AccessRequest.findOne({
-        companyId: employee.companyId,
-        email,
-        status: 'open'
-      });
-
-      if (existingRequest) {
-        existingRequest.message = trimmedMessage;
-        existingRequest.userId = employee._id;
-        existingRequest.employeeName = employee.name;
-        existingRequest.resolvedBy = undefined;
-        existingRequest.resolvedAt = undefined;
-        existingRequest.resolutionNote = undefined;
-        await existingRequest.save();
-      } else {
-        await AccessRequest.create({
-          companyId: employee.companyId,
-          userId: employee._id,
-          employeeName: employee.name,
-          email,
-          message: trimmedMessage
-        });
-      }
-
-      await notifyAdmins(employee.companyId.toString(), {
-        title: 'Solicitação de Acesso',
-        body: `${employee.name} pediu ajuda para recuperar o acesso.`,
-        url: '/admin/approvals'
-      });
-
-      const admins = await User.find({ companyId: employee.companyId, role: 'admin', isActive: true }).select('name email');
-      const approvalsUrl = `${getAppUrl(req)}/admin/approvals`;
-      await Promise.all(admins.map(admin =>
-        sendEmployeeAccessRequestEmail({
-          to: admin.email,
-          adminName: admin.name,
-          employeeName: employee.name,
-          employeeEmail: employee.email,
-          message: trimmedMessage,
-          approvalsUrl
-        }).catch(error => {
-          console.error('Error sending access request email:', error);
-        })
-      ));
-
-      return res.json({ message: 'Sua solicitação foi enviada ao administrador da empresa.' });
-    }
-
-    const user = await User.findOne({ email, role: 'admin', isActive: true });
+    const user = await User.findOne({ email, isActive: true });
     if (!user) {
       return res.json({ message: 'Se o email estiver cadastrado, você receberá um link de recuperação.' });
     }
@@ -291,6 +233,7 @@ router.post('/reset-password/:token', async (req, res) => {
     const { token } = req.params;
 
     if (password?.length > 128) return res.status(400).json({ message: 'Senha muito longa (máx 128 caracteres)' });
+    if (!validatePassword(password)) return res.status(400).json({ message: passwordValidationMessage });
 
     const user = await User.findOne({
       resetPasswordToken: token,

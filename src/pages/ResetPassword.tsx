@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import Button from '../components/Button';
+import PasswordField from '../components/PasswordField';
+import { validatePassword, passwordValidationMessage } from '../utils/passwordValidation';
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -19,6 +21,10 @@ const ResetPassword = () => {
 
     if (password !== confirmPassword) {
       setError('As senhas não coincidem');
+      return;
+    }
+    if (!validatePassword(password)) {
+      setError(passwordValidationMessage);
       return;
     }
 
@@ -73,37 +79,30 @@ const ResetPassword = () => {
           )}
 
           <div className="space-y-4">
-            <div className="relative">
-              <input
-                type="password"
-                required
-                maxLength={128}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full bg-black border border-zinc-700 rounded-md px-4 py-4 text-white focus:ring-1 focus:ring-sky-500 focus:border-sky-500 peer placeholder-transparent"
-                placeholder="Nova Senha"
-                id="password"
-              />
-              <label htmlFor="password" className="absolute left-4 top-2 text-xs text-zinc-500 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-sky-500">
-                Nova Senha
-              </label>
-            </div>
+            <PasswordField
+              id="password"
+              label="Nova Senha"
+              value={password}
+              onChange={setPassword}
+              placeholder="Nova Senha"
+              required
+              maxLength={128}
+              inputClassName="block w-full bg-black border border-zinc-700 rounded-md px-4 py-4 pr-12 text-white focus:ring-1 focus:ring-sky-500 focus:border-sky-500 peer placeholder-transparent"
+              labelClassName="absolute left-4 top-2 text-xs text-zinc-500 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-sky-500"
+              hint={passwordValidationMessage}
+            />
 
-            <div className="relative">
-              <input
-                type="password"
-                required
-                maxLength={128}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="block w-full bg-black border border-zinc-700 rounded-md px-4 py-4 text-white focus:ring-1 focus:ring-sky-500 focus:border-sky-500 peer placeholder-transparent"
-                placeholder="Confirmar Senha"
-                id="confirmPassword"
-              />
-              <label htmlFor="confirmPassword" className="absolute left-4 top-2 text-xs text-zinc-500 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-sky-500">
-                Confirmar Senha
-              </label>
-            </div>
+            <PasswordField
+              id="confirmPassword"
+              label="Confirmar Senha"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              placeholder="Confirmar Senha"
+              required
+              maxLength={128}
+              inputClassName="block w-full bg-black border border-zinc-700 rounded-md px-4 py-4 pr-12 text-white focus:ring-1 focus:ring-sky-500 focus:border-sky-500 peer placeholder-transparent"
+              labelClassName="absolute left-4 top-2 text-xs text-zinc-500 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-sky-500"
+            />
           </div>
 
           <Button

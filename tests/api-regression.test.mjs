@@ -40,7 +40,7 @@ async function api(path, options = {}) {
 
 test.before(async () => {
   serverProcess = spawn('./node_modules/.bin/tsx', ['server.ts'], {
-    env: { ...process.env, PORT: String(PORT), DISABLE_HMR: 'true' },
+    env: { ...process.env, PORT: String(PORT), DISABLE_HMR: 'true', NODE_ENV: 'test', APP_URL: '' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
@@ -122,4 +122,21 @@ test('forgot-password uses local host fallback when APP_URL is missing', async (
   }
 
   assert.match(serverOutput, new RegExp(`${baseUrl}/reset-password/[a-f0-9]{40}`));
+});
+
+test('register rejects weak passwords', async () => {
+  const weak = await api('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      companyName: 'Weak Password Ltda',
+      userName: 'Admin Fraco',
+      email: `weak.${Date.now()}@example.com`,
+      password: 'senha123',
+      plan: 'basic'
+    })
+  });
+
+  assert.equal(weak.response.status, 400);
+  assert.match(weak.body.message, /letra maiúscula/i);
 });

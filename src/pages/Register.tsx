@@ -4,6 +4,8 @@ import { useAuthStore } from '../store/authStore';
 import { Clock, Building2, User, Mail, Lock, Check } from 'lucide-react';
 import Button from '../components/Button';
 import toast from 'react-hot-toast';
+import PasswordField from '../components/PasswordField';
+import { validatePassword, passwordValidationMessage } from '../utils/passwordValidation';
 
 const Register = () => {
   const [companyName, setCompanyName] = useState('');
@@ -31,6 +33,11 @@ const Register = () => {
       const message = 'As senhas não coincidem';
       setError(message);
       toast.error(message);
+      return;
+    }
+    if (!validatePassword(password)) {
+      setError(passwordValidationMessage);
+      toast.error(passwordValidationMessage);
       return;
     }
 
@@ -174,36 +181,37 @@ const Register = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <label htmlFor="registerPassword" className="text-[10px] font-black text-zinc-300 uppercase tracking-widest ml-1">Senha</label>
-                <div className="relative group">
-                  <Lock aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
-                  <input
-                    id="registerPassword"
-                    type="password"
-                    required
-                    autoComplete="new-password"
-                    className="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
+                <PasswordField
+                  id="registerPassword"
+                  label="Senha"
+                  value={password}
+                  onChange={setPassword}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="new-password"
+                  wrapperClassName="relative group"
+                  icon={<Lock aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />}
+                  inputClassName="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all peer"
+                  labelClassName="sr-only"
+                  hint={passwordValidationMessage}
+                />
               </div>
 
               <div className="space-y-2">
                 <label htmlFor="confirmPassword" className="text-[10px] font-black text-zinc-300 uppercase tracking-widest ml-1">Confirmar Senha</label>
-                <div className="relative group">
-                  <Lock aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    required
-                    autoComplete="new-password"
-                    className="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </div>
+                <PasswordField
+                  id="confirmPassword"
+                  label="Confirmar Senha"
+                  value={confirmPassword}
+                  onChange={setConfirmPassword}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="new-password"
+                  wrapperClassName="relative group"
+                  icon={<Lock aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />}
+                  inputClassName="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all peer"
+                  labelClassName="sr-only"
+                />
               </div>
             </div>
 
